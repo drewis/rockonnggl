@@ -415,7 +415,7 @@ public class Constants{
     
 	/** File paths */
     private static final String ROCKON_STORAGE_PATH = Environment.getExternalStorageDirectory().getAbsolutePath() + "/";
-    static final String ROCKON_BASE_PATH = ROCKON_STORAGE_PATH + "RockOn/";
+    static final String ROCKON_BASE_PATH = ROCKON_STORAGE_PATH + "Android/data/org.abrantix.rockon/";
     static final String ROCKON_DONATION_PATH = ROCKON_BASE_PATH + "donate";
 	static final String ROCKON_ALBUM_ART_PATH = ROCKON_STORAGE_PATH + "albumthumbs/RockOnNg/";
 	static final String ROCKON_SMALL_ALBUM_ART_PATH = ROCKON_STORAGE_PATH + "albumthumbs/RockOnNg/small/";
