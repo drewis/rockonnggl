@@ -1,16 +1,18 @@
 package org.abrantix.rockon.rockonnggl;
 
 import org.abrantix.rockon.rockonnggl.cm.R;
+import java.net.URLEncoder;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.database.Cursor;
 import android.graphics.PixelFormat;
-import android.media.MediaScannerConnection;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -21,14 +23,17 @@ import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Window;
+import android.view.WindowManager;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.GridView;
+import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.AdapterView.OnItemClickListener;
 
 public class ManualAlbumArtActivity extends Activity{
+	private static final String TAG = "ManualAlbumArt";
 	static long 			mAlbumId = -1;
 	GridView				mChooserGrid;
 	ManualArtChooserAdapter	mChooserAdapter;
@@ -42,6 +47,8 @@ public class ManualAlbumArtActivity extends Activity{
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
+		getWindow().setFormat(PixelFormat.RGBA_8888); 
+		getWindow().addFlags(WindowManager.LayoutParams.FLAG_DITHER);
 		
 		if(savedInstanceState != null)
 			mManualSearch = savedInstanceState.getBoolean(MANUAL_SEARCH);
@@ -58,8 +65,80 @@ public class ManualAlbumArtActivity extends Activity{
 		Intent i = new Intent(this, RockOnNextGenService.class);
     	startService(i);
     	bindService(i, mServiceConnection, BIND_AUTO_CREATE);
+    	
+//    	setupAdsenseOrDonation();
+    	setupRzPromo();
     }
 	
+	private void setupRzPromo() {
+		findViewById(R.id.adview).setVisibility(View.GONE);
+		findViewById(R.id.donate_button).setVisibility(View.GONE);
+		findViewById(R.id.rz_promo).setVisibility(View.VISIBLE);
+//		findViewById(R.id.rz_promo).setVisibility(View.GONE);
+		findViewById(R.id.rz_promo).setOnClickListener(new OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				try
+				{
+					Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + "com.wecamefrommars.returnzero.full"));
+			        i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+			        startActivity(i);
+//					Intent i = new Intent(Intent.ACTION_VIEW, 
+//					Uri.parse("market://search?q=pub:%22We%20came%20from%20Mars%22"));
+//					startActivity(i);					
+				}
+				catch(ActivityNotFoundException e)
+				{
+					e.printStackTrace();
+					Toast.makeText(
+							ManualAlbumArtActivity.this, 
+							"Error, Market is not available", 
+							Toast.LENGTH_LONG)
+						.show();
+					
+				}
+			}
+		});
+	}
+	
+	/**
+	 * If the user has donated already, do not show adsense
+	 */
+	private void setupAdsenseOrDonation()
+	{
+		boolean ignoreTouchesOnly = true;
+		if(!Util.hasDonated(getApplicationContext(), ignoreTouchesOnly))
+		{
+			mAdHandler.sendEmptyMessageDelayed(0, 0);
+		}
+		else
+		{
+			AdsenseStuff.hideAdsAndDonation(this);
+		}
+	}
+	
+    private Handler mAdHandler = new Handler()
+    {
+    	@Override
+    	public void handleMessage(Message msg)
+    	{
+    		if(Math.random() > .33f) {
+    			AdsenseStuff.initAdSense(ManualAlbumArtActivity.this);
+    		} else {
+    			TextView tv = (TextView)findViewById(R.id.donate_button);
+    			tv.setOnClickListener(new OnClickListener() {
+					
+					@Override
+					public void onClick(View v) {
+						startActivity(new Intent(getApplicationContext(), DonateActivity.class));
+					}
+				});
+    	    			
+    		}
+    	}
+    };
+    
 	private ServiceConnection mServiceConnection = new ServiceConnection() {
 	    @Override
 		public void onServiceConnected(ComponentName classname, IBinder obj) {
@@ -118,6 +197,15 @@ public class ManualAlbumArtActivity extends Activity{
 	{
 		savedInstance.putBoolean(MANUAL_SEARCH, mManualSearch);
 	}
+	
+//	@Override
+//	  public void onAttachedToWindow() {
+//	    super.onAttachedToWindow();
+//	    Window window = getWindow();
+//	    // Eliminates color banding
+//	    window.setFormat(PixelFormat.RGBA_8888);
+//	  }
+
 	
 //	  @Override
 //	  public void onAttachedToWindow() {

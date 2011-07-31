@@ -1,9 +1,10 @@
 package org.abrantix.rockon.rockonnggl;
 
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Vector;
 
 import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
@@ -13,18 +14,14 @@ import org.abrantix.rockon.rockonnggl.cm.R;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.AlertDialog.Builder;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
-import android.content.ContentResolver;
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
-import android.content.SharedPreferences;
 import android.content.DialogInterface.OnCancelListener;
 import android.content.SharedPreferences.Editor;
 import android.content.pm.ActivityInfo;
@@ -41,7 +38,6 @@ import android.os.RemoteException;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.util.Log;
-import android.view.HapticFeedbackConstants;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -57,17 +53,15 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.AdapterView.OnItemClickListener;
-
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import android.widget.CompoundButton.OnCheckedChangeListener;
 
 public class RockOnNextGenGL extends Activity {
 	private final String TAG = "RockOnNextGenGL";
@@ -269,6 +263,11 @@ public class RockOnNextGenGL extends Activity {
         	showFullScreen();
         	break;
         }
+        
+//        /**
+//         * PontiflexAds
+//         */
+//        showPontiflexAds(true);
     }
     
     /** OnStart */
@@ -286,7 +285,8 @@ public class RockOnNextGenGL extends Activity {
         /**
          * Donation
          */
-        showDonation();
+        showDonation(false);
+        showRzPromo();
     }
     
     /** OnResume */
@@ -655,16 +655,28 @@ public class RockOnNextGenGL extends Activity {
     		{
 	    		for (int i=0; i<genreCursor.getCount(); i++){
 	    			genreCursor.moveToPosition(i);
-	    			playlistArray.add(
-	    					new Playlist(
-	    							(int) (Constants.PLAYLIST_GENRE_OFFSET 
-	    								- genreCursor.getLong(
-	    										genreCursor.getColumnIndexOrThrow(
-	    												MediaStore.Audio.Genres._ID))),
-	    							genreCursor.getString(
-	    									genreCursor.getColumnIndexOrThrow(
-	    											MediaStore.Audio.Genres.NAME))
-	    					));
+
+	    			int newPlaylistID = (int) (Constants.PLAYLIST_GENRE_OFFSET 
+							- genreCursor.getLong(
+									genreCursor.getColumnIndexOrThrow(
+											MediaStore.Audio.Genres._ID)));
+
+	    			Cursor genreSongCursor = cursorUtils.getAllSongsFromPlaylist(newPlaylistID);
+	    			if(genreSongCursor != null)
+	    			{
+	    				if (genreSongCursor.getCount() > 0)
+	    				{
+		    				playlistArray.add(
+		    					new Playlist(
+		    							newPlaylistID,
+		    							getString(R.string.genre_prefix) + " " +
+		    							genreCursor.getString(
+		    									genreCursor.getColumnIndexOrThrow(
+		    											MediaStore.Audio.Genres.NAME))
+		    					));
+	    				}
+	    				genreSongCursor.close();
+	    			}
 	    		}
 	    		genreCursor.close();
     		}
@@ -725,12 +737,165 @@ public class RockOnNextGenGL extends Activity {
     	}
     };
     
-    private void showDonation()
+//    private void showPontiflexAds(boolean enabled) {
+//    	if(!Util.hasDonated(getApplicationContext())) {
+//    		int appCreateCount = 
+//        		PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).
+//        			getInt(Constants.prefkey_mAppCreateCount, 1);
+//    		if(appCreateCount%Constants.PONTIFLEX_INTERVAL == 0)
+//    			mAdHandler.sendEmptyMessageDelayed(0, 0);
+//    	} 
+//    }
+    
+//    Handler mAdHandler = new Handler() {
+//		@Override
+//		public void handleMessage(Message msg) {
+//			IAdManager adManager = AdManagerFactory.createInstance(getApplication());
+//	    	adManager.startMultiOfferActivity();	
+//		}
+//	};
+	
+    private boolean hasDonationApps() {
+    	int donationAppsInstalled = 0;
+    	try{
+    		ComponentName cName = 
+				new ComponentName(
+					Constants.DONATION_APP_PKG_1, 
+					Constants.DONATION_APP_MAIN_ACTIVITY_1);
+			getPackageManager().
+				getActivityInfo(
+						cName,
+						0);
+			donationAppsInstalled++;
+		} catch(NameNotFoundException e) {
+		}
+		try{
+    		ComponentName cName = 
+				new ComponentName(
+						Constants.DONATION_APP_PKG_2, 
+						Constants.DONATION_APP_MAIN_ACTIVITY_2);
+			getPackageManager().
+				getActivityInfo(
+						cName,
+						0);
+			donationAppsInstalled++;
+		} catch(NameNotFoundException e) {
+		}
+		try{
+    		ComponentName cName = 
+				new ComponentName(
+						Constants.DONATION_APP_PKG_3, 
+						Constants.DONATION_APP_MAIN_ACTIVITY_3);
+			getPackageManager().
+				getActivityInfo(
+						cName,
+						0);
+			donationAppsInstalled++;
+		} catch(NameNotFoundException e) {
+		}
+		try{
+    		ComponentName cName = 
+				new ComponentName(
+						Constants.DONATION_APP_PKG_4, 
+						Constants.DONATION_APP_MAIN_ACTIVITY_4);
+			getPackageManager().
+				getActivityInfo(
+						cName,
+						0);
+			donationAppsInstalled++;
+		} catch(NameNotFoundException e) {
+		}
+		return donationAppsInstalled > 0;
+    }
+    
+    private void showRzPromo() {
+    	boolean hasDonated = 
+			PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).
+				getBoolean(Constants.prefkey_mAppHasDonated, false);
+    	
+    	if(!hasDonated && !hasDonationApps()) {
+	    	int appCreateCount = 
+	    		PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
+	    		.getInt(Constants.prefkey_mAppCreateCount, 1);
+	    	boolean hasShown = 
+	    		PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
+	    		.getBoolean("shownRzPromo", false);
+	    	boolean neverShowAgain = 
+	    		PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
+	    		.getBoolean("neverShowRzPromo", false);
+    		
+	    	if(!hasShown) {
+	    		showRZDlg();
+	    		PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
+	    		.edit().putBoolean("shownRzPromo", true)
+	    		.commit();
+	    	} else if(!neverShowAgain && appCreateCount%20 == 0) {
+	    		Log.i(TAG, "NOT CANCELED AND "+appCreateCount%10+" "+appCreateCount);
+	    		showRZDlg();
+	    	}
+    	}
+    }
+    
+    static private void openRZInMarket(Context ctx) {
+        Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=com.wecamefrommars.returnzero.beta"));
+        i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        ctx.startActivity(i);
+    }
+    
+    private void showRZDlg() {
+    	View v = ((LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.rz_promo_dialog, null);
+    	v.findViewById(R.id.rz_dlg_img).setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				openRZInMarket(getApplicationContext());
+			}
+		});
+//    	v.findViewById(R.id.never_again).setOnClickListener(new OnClickListener() {
+//			@Override
+//			public void onClick(View v) {
+//			}
+//		});
+    	((CheckBox)v.findViewById(R.id.never_again_check)).setOnCheckedChangeListener(new OnCheckedChangeListener() {
+			@Override
+			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+				PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
+	    		.edit().putBoolean("neverShowRzPromo", isChecked)
+	    		.commit();
+			}
+		});
+    	
+    	AlertDialog.Builder adb = new AlertDialog.Builder(RockOnNextGenGL.this)
+    		.setTitle(R.string.rz_dlg_title)
+    		.setView(v)
+    		.setPositiveButton(getString(R.string.ok), new DialogInterface.OnClickListener() {
+				@Override
+				public void onClick(DialogInterface dialog, int which) {
+					openRZInMarket(getApplicationContext());
+				}
+			})
+			.setNegativeButton(getString(R.string.playlist_dialog_cancel), null);
+    	adb.show();
+    	
+    	if(mService != null) {
+    		try {
+				mService.trackPage(Constants.ANALYTICS_RZ_PROMO);
+			} catch (RemoteException e) {
+				e.printStackTrace();
+			}
+    	}
+    }
+    
+    private void showDonation(boolean enabled)
     {
     	int appCreateCount = 
     		PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).
     			getInt(Constants.prefkey_mAppCreateCount, 1);
+ 
     	appCreateCount++;
+ 
+    	PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
+    		.edit().putInt(Constants.prefkey_mAppCreateCount, appCreateCount)
+    		.commit();
     	
     	int appCreateCountForDonation = 
     		PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).
@@ -741,7 +906,7 @@ public class RockOnNextGenGL extends Activity {
 				getBoolean(Constants.prefkey_mAppHasDonated, false);
 		
 		Editor editor = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).edit();
-
+		
     	if(getResources().getBoolean(R.bool.config_isMarketVersion)
     		&& appCreateCount >= appCreateCountForDonation)
     	{    			
@@ -750,62 +915,61 @@ public class RockOnNextGenGL extends Activity {
     		else
     			appCreateCountForDonation += Constants.DONATION_STANDARD_INTERVAL;
 
-        	editor.putInt(Constants.prefkey_mAppCreateCount, appCreateCount);
     		editor.putInt(Constants.prefkey_mAppCreateCountForDonation, appCreateCountForDonation);
     		
         	editor.commit();
         	
-        	int donationAppsInstalled = 0;
-        	try{
-        		ComponentName cName = 
-    				new ComponentName(
-						Constants.DONATION_APP_PKG_1, 
-						Constants.DONATION_APP_MAIN_ACTIVITY_1);
-    			getPackageManager().
-    				getActivityInfo(
-    						cName,
-    						0);
-    			donationAppsInstalled++;
-    		} catch(NameNotFoundException e) {
-    		}
-    		try{
-        		ComponentName cName = 
-    				new ComponentName(
-    						Constants.DONATION_APP_PKG_2, 
-    						Constants.DONATION_APP_MAIN_ACTIVITY_2);
-    			getPackageManager().
-    				getActivityInfo(
-    						cName,
-    						0);
-    			donationAppsInstalled++;
-    		} catch(NameNotFoundException e) {
-    		}
-    		try{
-        		ComponentName cName = 
-    				new ComponentName(
-    						Constants.DONATION_APP_PKG_3, 
-    						Constants.DONATION_APP_MAIN_ACTIVITY_3);
-    			getPackageManager().
-    				getActivityInfo(
-    						cName,
-    						0);
-    			donationAppsInstalled++;
-    		} catch(NameNotFoundException e) {
-    		}
-    		try{
-        		ComponentName cName = 
-    				new ComponentName(
-    						Constants.DONATION_APP_PKG_4, 
-    						Constants.DONATION_APP_MAIN_ACTIVITY_4);
-    			getPackageManager().
-    				getActivityInfo(
-    						cName,
-    						0);
-    			donationAppsInstalled++;
-    		} catch(NameNotFoundException e) {
-    		}
+//        	int donationAppsInstalled = 0;
+//        	try{
+//        		ComponentName cName = 
+//    				new ComponentName(
+//						Constants.DONATION_APP_PKG_1, 
+//						Constants.DONATION_APP_MAIN_ACTIVITY_1);
+//    			getPackageManager().
+//    				getActivityInfo(
+//    						cName,
+//    						0);
+//    			donationAppsInstalled++;
+//    		} catch(NameNotFoundException e) {
+//    		}
+//    		try{
+//        		ComponentName cName = 
+//    				new ComponentName(
+//    						Constants.DONATION_APP_PKG_2, 
+//    						Constants.DONATION_APP_MAIN_ACTIVITY_2);
+//    			getPackageManager().
+//    				getActivityInfo(
+//    						cName,
+//    						0);
+//    			donationAppsInstalled++;
+//    		} catch(NameNotFoundException e) {
+//    		}
+//    		try{
+//        		ComponentName cName = 
+//    				new ComponentName(
+//    						Constants.DONATION_APP_PKG_3, 
+//    						Constants.DONATION_APP_MAIN_ACTIVITY_3);
+//    			getPackageManager().
+//    				getActivityInfo(
+//    						cName,
+//    						0);
+//    			donationAppsInstalled++;
+//    		} catch(NameNotFoundException e) {
+//    		}
+//    		try{
+//        		ComponentName cName = 
+//    				new ComponentName(
+//    						Constants.DONATION_APP_PKG_4, 
+//    						Constants.DONATION_APP_MAIN_ACTIVITY_4);
+//    			getPackageManager().
+//    				getActivityInfo(
+//    						cName,
+//    						0);
+//    			donationAppsInstalled++;
+//    		} catch(NameNotFoundException e) {
+//    		}
         	
-    		if(donationAppsInstalled <= 0) {
+    		if(!hasDonationApps() && enabled) {
 		    	Intent i = new Intent(this, DonateActivity.class);
 		        startActivity(i);
     		}
@@ -2707,7 +2871,7 @@ public class RockOnNextGenGL extends Activity {
 		@Override
 		public void onClick(View v) {
 			if(!mSearchClickHandler.hasMessages(0)){
-				APILevelChecker.getInstance().hapticFeedback(v);
+//				APILevelChecker.getInstance().hapticFeedback(v);
 				if(findViewById(R.id.search_container) ==  null)
 					showSearch();
 				else
@@ -3733,7 +3897,7 @@ public class RockOnNextGenGL extends Activity {
 	private void setupAutoCompleteSearch(int playlistId){
     	/* cursor */
 		Cursor allSongsCursor = new CursorUtils(getApplicationContext()).
-    		getAllSongsFromPlaylist(playlistId);
+			getAllSongsFromPlaylist(playlistId);
 		if(allSongsCursor != null)
 			startManagingCursor(allSongsCursor);
     		
