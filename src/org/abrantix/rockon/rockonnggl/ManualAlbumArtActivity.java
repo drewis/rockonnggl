@@ -1,5 +1,7 @@
 package org.abrantix.rockon.rockonnggl;
 
+import org.abrantix.rockon.rockonnggl.cm.R;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ComponentName;
@@ -61,12 +63,13 @@ public class ManualAlbumArtActivity extends Activity{
     	startService(i);
     	bindService(i, mServiceConnection, BIND_AUTO_CREATE);
     	
-    	setupAdsenseOrDonation();
+//    	setupAdsenseOrDonation();
     }
 	
 	/**
 	 * If the user has donated already, do not show adsense
 	 */
+	 /*
 	private void setupAdsenseOrDonation()
 	{
 		boolean ignoreTouchesOnly = true;
@@ -100,7 +103,7 @@ public class ManualAlbumArtActivity extends Activity{
     		}
     	}
     };
-    
+    */
 	private ServiceConnection mServiceConnection = new ServiceConnection() {
 	    @Override
 		public void onServiceConnected(ComponentName classname, IBinder obj) {
