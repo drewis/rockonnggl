@@ -13,6 +13,7 @@ public class Util {
 	
 	static int oDonationAppsInstalled=0;
 	static public boolean hasDonated(Context ctx, boolean ignoreTouchesOnly) {
+	/*
 		oDonationAppsInstalled = 0;
     	if(ctx.getResources().getBoolean(R.bool.config_isMarketVersion)) {    			
     		File f = new File(Constants.ROCKON_DONATION_PATH);
@@ -82,5 +83,7 @@ public class Util {
         	Log.i(null, "It is not market version");
         	return true;
         }
+        */
+        return false;
 	}
 }
