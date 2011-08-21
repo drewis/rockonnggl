@@ -3,6 +3,8 @@ package org.abrantix.rockon.rockonnggl;
 import java.io.File;
 import java.io.IOException;
 
+import org.abrantix.rockon.rockonnggl.cm.R;
+
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -13,7 +15,6 @@ public class Util {
 	
 	static int oDonationAppsInstalled=0;
 	static public boolean hasDonated(Context ctx, boolean ignoreTouchesOnly) {
-	/*
 		oDonationAppsInstalled = 0;
     	if(ctx.getResources().getBoolean(R.bool.config_isMarketVersion)) {    			
     		File f = new File(Constants.ROCKON_DONATION_PATH);
@@ -83,7 +84,5 @@ public class Util {
         	Log.i(null, "It is not market version");
         	return true;
         }
-        */
-        return false;
 	}
 }
